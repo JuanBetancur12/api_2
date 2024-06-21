@@ -61,6 +61,7 @@ const createAsistenciasTable = `CREATE TABLE IF NOT EXISTS asistencias (
     apellido TEXT NOT NULL,
     clase TEXT NOT NULL,
     fecha_actual TEXT NOT NULL,
+    estado_asistencia TEXT NOT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
 )`;
 
@@ -273,18 +274,6 @@ app.post('/evento', (req, res) => {
         });
     });
     
-   // Ruta para crear una nueva asistencia
-app.post('/asistencia', (req, res) => {
-    const { id_usuario, nombre_usuario, apellido, clase, fecha_actual } = req.body;
-    const sql = `INSERT INTO asistencias (id_usuario, nombre_usuario, apellido, clase, fecha_actual) VALUES (?, ?, ?, ?, ?)`;
-    db.run(sql, [id_usuario, nombre_usuario, apellido, clase, fecha_actual], function(err) {
-        if (err) {
-            return res.status(400).json({ error: err.message });
-        }
-        res.status(201).json({ message: 'Asistencia registrada correctamente', asistencia: { id: this.lastID, id_usuario, nombre_usuario, apellido, clase, fecha_actual } });
-    });
-});
-
 // Ruta para obtener todas las asistencias
 app.get('/asistencias', (req, res) => {
     const sql = `SELECT * FROM asistencias`;
@@ -298,9 +287,11 @@ app.get('/asistencias', (req, res) => {
 
 // Ruta para actualizar una asistencia por ID
 app.put('/asistencia/:id', (req, res) => {
-    const { id_usuario, nombre_usuario, apellido, clase, fecha_actual } = req.body;
-    const sql = `UPDATE asistencias SET id_usuario = ?, nombre_usuario = ?, apellido = ?, clase = ?, fecha_actual = ? WHERE id_asistencia = ?`;
-    db.run(sql, [id_usuario, nombre_usuario, apellido, clase, fecha_actual, req.params.id], function(err) {
+    const { id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia } = req.body;
+    const sql = `UPDATE asistencias 
+                SET id_usuario = ?, nombre_usuario = ?, apellido = ?, clase = ?, fecha_actual = ?, estado_asistencia = ?
+                WHERE id_asistencia = ?`;
+    db.run(sql, [id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia, req.params.id], function(err) {
         if (err) {
             return res.status(400).json({ error: err.message });
         }
