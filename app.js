@@ -299,19 +299,31 @@ app.get('/asistencias', (req, res) => {
 });
 
 // Ruta para actualizar una asistencia por ID
+// Ruta para actualizar una asistencia por ID
 app.put('/asistencia/:id', (req, res) => {
-    const { id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia } = req.body;
+    const id = req.params.id;
+    const { estado_asistencia } = req.body; // Obtener el nuevo estado de asistencia desde el cuerpo de la solicitud
+
+    // Validar que se haya enviado el estado de asistencia
+    if (!estado_asistencia) {
+        return res.status(400).json({ error: 'Estado de asistencia no proporcionado' });
+    }
+
     const sql = `UPDATE asistencias 
-                SET id_usuario = ?, nombre_usuario = ?, apellido = ?, clase = ?, fecha_actual = ?, estado_asistencia = ?
+                SET estado_asistencia = ?
                 WHERE id_asistencia = ?`;
-    db.run(sql, [id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia, req.params.id], function(err) {
+
+    db.run(sql, [estado_asistencia, id], function(err) {
         if (err) {
+            console.error('Error al actualizar asistencia: ' + err.message);
             return res.status(400).json({ error: err.message });
         }
+
         if (this.changes === 0) {
             return res.status(404).json({ error: 'Asistencia no encontrada' });
         }
-        res.json({ message: 'Asistencia actualizada correctamente', updatedID: req.params.id });
+
+        res.json({ message: 'Asistencia actualizada correctamente', updatedID: id });
     });
 });
 
