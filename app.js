@@ -274,6 +274,19 @@ app.post('/evento', (req, res) => {
         });
     });
     
+
+// Ruta para registrar una nueva asistencia
+app.post('/asistencia', (req, res) => {
+    const { id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia } = req.body;
+    const sql = `INSERT INTO asistencias (id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia) VALUES (?, ?, ?, ?, ?, ?)`;
+    db.run(sql, [id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia], function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.status(201).json({ message: 'Asistencia registrada correctamente', asistencia: { id: this.lastID, id_usuario, nombre_usuario, apellido, clase, fecha_actual, estado_asistencia } });
+    });
+});
+
 // Ruta para obtener todas las asistencias
 app.get('/asistencias', (req, res) => {
     const sql = `SELECT * FROM asistencias`;
@@ -315,6 +328,7 @@ app.delete('/asistencia/:id', (req, res) => {
         res.json({ message: 'Asistencia eliminada correctamente', deletedID: req.params.id });
     });
 });
+
     
     // Iniciar el servidor
     const PORT = process.env.PORT || 3000;
