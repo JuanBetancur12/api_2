@@ -72,6 +72,23 @@ function createTables() {
         }
     });
 }
+const createNovedadesTable = `CREATE TABLE IF NOT EXISTS novedades (
+    id_novedad INTEGER PRIMARY KEY AUTOINCREMENT,
+    motivo TEXT,
+    instructor TEXT,
+    estado_novedad TEXT,
+    fecha DATE
+)`;
+
+
+db.run(createNovedadesTable, (err) => {
+    if (err) {
+        console.error(err.message);
+    } else {
+        console.log('Tabla "novedades" creada o ya existe.');
+    }
+});
+
 
 // Ruta para manejar el inicio de sesión
 app.post('/user/login', (req, res) => {
@@ -350,6 +367,70 @@ app.delete('/asistencia/:id', (req, res) => {
         res.json({ message: 'Asistencia eliminada correctamente', deletedID: req.params.id });
     });
 });
+
+// Ruta para obtener todas las novedades
+app.get('/novedades', (req, res) => {
+    const sql = `SELECT * FROM novedades`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.json({ novedades: rows });
+    });
+});
+
+app.post('/novedad', (req, res) => {
+    const { motivo, instructor, estado_novedad, fecha } = req.body;
+    const sql = `INSERT INTO novedades (motivo, instructor, estado_novedad, fecha) VALUES (?, ?, ?, ?)`;
+    db.run(sql, [motivo, instructor, estado_novedad, fecha], function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.status(201).json({
+            message: 'Novedad creada correctamente',
+            novedad: {
+                id: this.lastID,
+                motivo,
+                instructor,
+                estado_novedad,
+                fecha
+            }
+        });
+    });
+});
+
+app.put('/novedad/:id', (req, res) => {
+    const id = req.params.id;
+    const { motivo, instructor, estado_novedad, fecha } = req.body;
+    const sql = `UPDATE novedades SET motivo = ?, instructor = ?, estado_novedad = ?, fecha = ? WHERE id_novedad = ?`;
+    db.run(sql, [motivo, instructor, estado_novedad, fecha, id], function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Novedad no encontrada' });
+        }
+        res.json({
+            message: 'Novedad actualizada correctamente',
+            updatedID: id
+        });
+    });
+});
+// Ruta para eliminar una novedad por ID
+app.delete('/novedad/:id', (req, res) => {
+    const sql = `DELETE FROM novedades WHERE id_novedad = ?`;
+    db.run(sql, req.params.id, function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Novedad no encontrada' });
+        }
+        res.json({ message: 'Novedad eliminada correctamente', deletedID: req.params.id });
+    });
+});
+
+
 
 // Iniciar el servidor
 const PORT = process.env.PORT || 3000;
