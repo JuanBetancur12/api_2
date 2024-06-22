@@ -111,7 +111,7 @@ app.get('/profesor/resource', isTeacher, (req, res) => {
 
 // Ruta para obtener nombres y apellidos de estudiantes
 app.get('/usuarios/estudiantes', (req, res) => {
-    const sql = `SELECT nombre_usuario, apellido FROM usuarios WHERE rol = 'estudiante'`;
+    const sql = `SELECT nombre, apellido FROM usuarios WHERE roll = 'estudiante'`;
     db.all(sql, [], (err, rows) => {
         if (err) {
             return res.status(400).json({ error: err.message });
@@ -119,7 +119,6 @@ app.get('/usuarios/estudiantes', (req, res) => {
         res.json({ estudiantes: rows });
     });
 });
-
 // Ruta para manejar el POST de usuarios
 app.post('/user', (req, res) => {
     try {
