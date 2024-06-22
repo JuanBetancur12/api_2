@@ -109,6 +109,17 @@ app.get('/profesor/resource', isTeacher, (req, res) => {
     res.status(200).json({ status: 200, success: true, message: 'Bienvenido profesor' });
 });
 
+// Ruta para obtener nombres y apellidos de estudiantes
+app.get('/usuarios/estudiantes', (req, res) => {
+    const sql = `SELECT nombre_usuario, apellido FROM usuarios WHERE rol = 'estudiante'`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.json({ estudiantes: rows });
+    });
+});
+
 // Ruta para manejar el POST de usuarios
 app.post('/user', (req, res) => {
     try {
