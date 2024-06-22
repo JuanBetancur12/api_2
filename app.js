@@ -15,7 +15,7 @@ const db = new sqlite3.Database('./yamix.db', sqlite3.OPEN_READWRITE | sqlite3.O
 
 app.use(bodyParser.json());
 
-// Función para crear las tablas 'usuarios' y 'eventos'
+// Función para crear las tablas 'usuarios', 'eventos' y 'asistencias'
 function createTables() {
     const createUsuariosTable = `CREATE TABLE IF NOT EXISTS usuarios (
         id_usuario INTEGER PRIMARY KEY, 
@@ -52,26 +52,26 @@ function createTables() {
             console.log('Tabla "eventos" creada o ya existe.');
         }
     });
+
+    const createAsistenciasTable = `CREATE TABLE IF NOT EXISTS asistencias (
+        id_asistencia INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_usuario INTEGER NOT NULL,
+        nombre_usuario TEXT NOT NULL,
+        apellido TEXT NOT NULL,
+        clase TEXT NOT NULL,
+        fecha_actual TEXT NOT NULL,
+        estado_asistencia TEXT NOT NULL,
+        FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
+    )`;
+
+    db.run(createAsistenciasTable, (err) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('Tabla "asistencias" creada o ya existe.');
+        }
+    });
 }
-
-const createAsistenciasTable = `CREATE TABLE IF NOT EXISTS asistencias (
-    id_asistencia INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_usuario INTEGER NOT NULL,
-    nombre_usuario TEXT NOT NULL,
-    apellido TEXT NOT NULL,
-    clase TEXT NOT NULL,
-    fecha_actual TEXT NOT NULL,
-    estado_asistencia TEXT NOT NULL,
-    FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
-)`;
-
-db.run(createAsistenciasTable, (err) => {
-    if (err) {
-        console.error(err.message);
-    } else {
-        console.log('Tabla "asistencias" creada o ya existe.');
-    }
-});
 
 // Ruta para manejar el inicio de sesión
 app.post('/user/login', (req, res) => {
@@ -96,8 +96,8 @@ app.post('/user/login', (req, res) => {
 
 // Middleware para verificar el roll de profesor
 function isTeacher(req, res, next) {
-    const { roll} = req.user;
-    if (roll=== 'profesor') {
+    const { roll } = req.user;
+    if (roll === 'profesor') {
         next(); // Permitir acceso al siguiente middleware o controlador
     } else {
         res.status(403).json({ status: 403, success: false, message: 'No tiene permisos de profesor para acceder a este recurso' });
@@ -112,7 +112,7 @@ app.get('/profesor/resource', isTeacher, (req, res) => {
 // Ruta para manejar el POST de usuarios
 app.post('/user', (req, res) => {
     try {
-        const { nombre, apellido, gmail, contraseña, roll, clase} = req.body;
+        const { nombre, apellido, gmail, contraseña, roll, clase } = req.body;
         const sql = 'INSERT INTO usuarios (nombre, apellido, gmail, contraseña, roll, clase) VALUES (?, ?, ?, ?, ?, ?)';
         db.run(sql, [nombre, apellido, gmail, contraseña, roll, clase ], function(err) {
             if (err) {
@@ -214,6 +214,7 @@ app.delete('/user/:id', (req, res) => {
                 res.status(200).json({ status: 200, success: true });
             } else {
                 res.status(404).json({ status: 404, success: false, message: `Usuario con ID ${id} no encontrado` });
+                res.status(404).json({ status: 404, success: false, message: `Usuario con ID ${id} no encontrado` });
             }
         }
     });
@@ -225,55 +226,55 @@ app.delete('/user/:id', (req, res) => {
 app.post('/evento', (req, res) => {
     const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final } = req.body;
     const sql = `INSERT INTO eventos (nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora, final]
-        , function(err) {
-            if (err) {
-                return res.status(400).json({ error: err.message });
-            }
-            res.status(201).json({ message: 'Evento creado correctamente', evento: { id: this.lastID, nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final } });
-        });
+    db.run(sql, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final], function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.status(201).json({ message: 'Evento creado correctamente', evento: { id: this.lastID, nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final } });
     });
-    
-    // Ruta para obtener todos los eventos
-    app.get('/eventos', (req, res) => {
-        const sql = `SELECT * FROM eventos`;
-        db.all(sql, [], (err, rows) => {
-            if (err) {
-                return res.status(400).json({ error: err.message });
-            }
-            res.json({ eventos: rows });
-        });
+});
+
+// Ruta para obtener todos los eventos
+app.get('/eventos', (req, res) => {
+    const sql = `SELECT * FROM eventos`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        res.json({ eventos: rows });
     });
-    
-    // Ruta para actualizar un evento por ID
-    app.put('/eventos/:id', (req, res) => {
-        const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final } = req.body;
-        const sql = `UPDATE eventos SET nombre_evento = ?, descripcion = ?, tipo_evento = ?, ubicacion = ?, fecha_hora_inicio = ?, fecha_hora_final = ? WHERE id_evento = ?`;
-        db.run(sql, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, req.params.id], function(err) {
-            if (err) {
-                return res.status(400).json({ error: err.message });
-            }
-            if (this.changes === 0) {
-                return res.status(404).json({ error: 'Evento no encontrado' });
-            }
-            res.json({ message: 'Evento actualizado correctamente', updatedID: req.params.id });
-        });
+});
+
+// Ruta para actualizar un evento por ID
+app.put('/eventos/:id', (req, res) => {
+    const { nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final } = req.body;
+    const sql = `UPDATE eventos SET nombre_evento = ?, descripcion = ?, tipo_evento = ?, ubicacion = ?, fecha_hora_inicio = ?, fecha_hora_final = ? WHERE id_evento = ?`;
+    db.run(sql, [nombre_evento, descripcion, tipo_evento, ubicacion, fecha_hora_inicio, fecha_hora_final, req.params.id], function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Evento no encontrado' });
+        }
+        res.json({ message: 'Evento actualizado correctamente', updatedID: req.params.id });
     });
-    
-    // Ruta para eliminar un evento por ID
-    app.delete('/eventos/:id', (req, res) => {
-        const sql = `DELETE FROM eventos WHERE id_evento = ?`;
-        db.run(sql, req.params.id, function(err) {
-            if (err) {
-                return res.status(400).json({ error: err.message });
-            }
-            if (this.changes === 0) {
-                return res.status(404).json({ error: 'Evento no encontrado' });
-            }
-            res.json({ message: 'Evento eliminado correctamente', deletedID: req.params.id });
-        });
+});
+
+// Ruta para eliminar un evento por ID
+app.delete('/eventos/:id', (req, res) => {
+    const sql = `DELETE FROM eventos WHERE id_evento = ?`;
+    db.run(sql, req.params.id, function(err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Evento no encontrado' });
+        }
+        res.json({ message: 'Evento eliminado correctamente', deletedID: req.params.id });
     });
-    
+});
+
+// Métodos CRUD para la tabla 'asistencias'
 
 // Ruta para registrar una nueva asistencia
 app.post('/asistencia', (req, res) => {
@@ -298,7 +299,6 @@ app.get('/asistencias', (req, res) => {
     });
 });
 
-// Ruta para actualizar una asistencia por ID
 // Ruta para actualizar una asistencia por ID
 app.put('/asistencia/:id', (req, res) => {
     const id = req.params.id;
@@ -341,10 +341,8 @@ app.delete('/asistencia/:id', (req, res) => {
     });
 });
 
-    
-    // Iniciar el servidor
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`Servidor iniciado en el puerto ${PORT}`);
-    });
-    
+// Iniciar el servidor
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor iniciado en el puerto ${PORT}`);
+});
